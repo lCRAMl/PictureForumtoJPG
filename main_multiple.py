@@ -58,6 +58,13 @@ headers = {
     'TE': 'trailers',
 }
 
+class AbortProgram(Exception):
+    pass
+
+def check_abort():
+    if keyboard.is_pressed("esc"):
+        raise AbortProgram()
+
 def login(base_url, username, password):
     """
     Logs in to a XenForo forum.
@@ -205,8 +212,7 @@ def find_real_image_urls(image_urls: List[str]) -> List[str]:
     filelist = []
 
     for url in image_urls:
-        if keyboard.is_pressed("esc"):
-            break
+        check_abort()
         try:
             # Suche passende Funktion
             func = next((f for host, f in host_functions.items() if host in url), None)
@@ -282,18 +288,35 @@ async def safe_download(file, dest):
         return await download(file, dest)
 
 async def main():
-    session = login(BASE_URL, USERNAME, PASSWORD)
-    if session:
+    tasks = []  # <<< immer initialisieren
+    
+    try:
+        session = login(BASE_URL, USERNAME, PASSWORD)
+        if not session:
+            print("Login failed. Exiting.")
+            return
+
         images = find_posted_pictures(session, FORUM_URL)
         dest_folder = create_folder_from_forum_title(session, FORUM_URL, IMG_DL_PATH)
-        dlurls = find_real_image_urls(images)
+        dlurls = find_real_image_urls(images)  # check_abort() intern
 
-    else:
-        print("Login failed. Exiting.")
-        exit(1)
+        # Erstelle Tasks
+        tasks = [asyncio.create_task(safe_download(file, dest_folder)) for file in dlurls]
 
-    tasks = [asyncio.create_task(safe_download(file, dest_folder)) for file in dlurls]
-    await asyncio.gather(*tasks, return_exceptions=True)
+        # Starte Tasks und sammle Ergebnisse
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+    except AbortProgram:
+        print("\nESC detected! Cancelling all tasks...")
+
+        # Cancel nur die Tasks, die wir selbst erstellt haben
+        for t in tasks:
+            t.cancel()
+
+        # Warte nur auf die gecancelten Tasks, nicht auf all_tasks()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        print("All tasks cancelled. Exiting.")
+
 
 if __name__ == '__main__':
     asyncio.run(main())
