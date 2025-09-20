@@ -16,11 +16,11 @@ from providers.providers import get_real_imagebam_url, get_real_pixhost_url, get
 from typing import List
 import keyboard
 
-FORUM_URL = "https://picturepub.net/threads/scarlett-johansson-de-beers-emmys-photoshoot-september-2025.424236/"  # Replace with the forum thread URL
+FORUM_URL = "https://picturepub.net/threads/kate-mara-attends-tuckernuck-x-barbour-celebration-tarrytown-ny-september-18-2025.424419/"  # Replace with the forum thread URL
 from credentials import USERNAME, PASSWORD
 BASE_URL = "/".join(FORUM_URL.split("/")[:3])
 IMG_DL_PATH = "Z:\\Downloads\\"  # Replace with your desired download path
-IMAGENAME = "ps"  # Replace with the image name
+IMAGENAME = "TuckernuckXBarbourCelebrationinNYC_18Sep2o25"  # Replace with the image name
 nbrOfParallelDL = 5  # Number of parallel downloads
 
 host_functions = {
@@ -303,6 +303,8 @@ async def main():
 
         # Starte Tasks und sammle Ergebnisse
         await asyncio.gather(*tasks, return_exceptions=True)
+        
+        print(f"")
 
     except AbortProgram:
         print("\nESC detected! Cancelling all tasks...")

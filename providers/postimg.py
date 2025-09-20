@@ -7,27 +7,34 @@ from typing import Optional
 
 def get_real_postimg_url(image_url, debug: bool = False) -> Optional[str]:
     try:
-        # Fetch the page to get the actual image URL
         response = requests.get(image_url)
         if response.status_code != 200:
-            print(f"Failed to load postimg.cc page: {image_url}")
-            return []
+            if debug:
+                print(f"Failed to load postimg.cc page: {image_url}")
+            return None
 
         soup = BeautifulSoup(response.text, 'html.parser')
-        # Find all <a> tags with the class 'view-image'
-        img_tag = soup.find("img", id="main-image")
-        return img_tag["src"]
+
+        # Fallback: Direktlink im Download-Button
+        download_link = soup.find("a", id="download")
+        if download_link and download_link.get("href"):
+            return download_link["href"]
+
+        if debug:
+            print("Kein Bild gefunden auf der Seite:", image_url)
+        return None
 
     except Exception as e:
-        print(f"An error occurred while searching at postimg.cc: {e}")
-        return []
+        if debug:
+            print(f"Error fetching postimg.cc URL {image_url}: {e}")
+        return None
     
 # --- Standalone Ausführung ---
 if __name__ == "__main__":
     import sys
 
     # URL aus Kommandozeile oder Hardcode
-    test_url = sys.argv[1] if len(sys.argv) > 1 else "https://postimg.cc"
+    test_url = sys.argv[1] if len(sys.argv) > 1 else "https://postimg.cc/cK21Bszx"
     result = get_real_postimg_url(test_url, debug=True)
     if result:
         print("Bild-URL:", result)
