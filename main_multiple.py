@@ -16,11 +16,11 @@ from providers.providers import get_real_imagebam_url, get_real_pixhost_url, get
 from typing import List
 import keyboard
 
-FORUM_URL = "https://picturepub.net/threads/jenna-ortega-wednesday-season-2-press-conference-in-seoul-south-korea-august-11-2025.421919/"  # Replace with the forum thread URL
+FORUM_URL = "https://picturepub.net/threads/scarlett-johansson-de-beers-emmys-photoshoot-september-2025.424236/"  # Replace with the forum thread URL
 from credentials import USERNAME, PASSWORD
 BASE_URL = "/".join(FORUM_URL.split("/")[:3])
 IMG_DL_PATH = "Z:\\Downloads\\"  # Replace with your desired download path
-IMAGENAME = "WednesdaySeason2PressConferenceinSeoul_11Aug2o25"  # Replace with the image name
+IMAGENAME = "ps"  # Replace with the image name
 nbrOfParallelDL = 5  # Number of parallel downloads
 
 download_counter = 0
@@ -265,14 +265,12 @@ async def download(imagepath: str, destination: str):
                             if attempt == 2:
                                 print(f"Failed after 3 attempts: {imagepath}")
                                 break
-                except (httpx.RequestError, httpx.HTTPStatusError, httpx.RemoteProtocolError) as exc:
+                except (httpx.RequestError, httpx.RemoteProtocolError, httpx.HTTPStatusError) as exc:
                     print(f"Attempt {attempt+1}/3: Error while requesting {imagepath}: {exc}")
                     if attempt == 2:
                         print(f"Failed after 3 attempts: {imagepath}")
-                except httpx.HTTPStatusError as exc:
-                    print(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}.")
-                except httpx.RemoteProtocolError as exc:
-                    print(f"Remote end closed connection without response: {exc}")
+                await asyncio.sleep(1)  # Wait before retrying
+
 
 def verify_image(img_file):
     try:
@@ -299,6 +297,8 @@ async def main():
         images = find_posted_pictures(session, FORUM_URL)
         dest_folder = create_folder_from_forum_title(session, FORUM_URL, IMG_DL_PATH)
         dlurls = find_real_image_urls(images)  # check_abort() intern
+        dlurls = list(dict.fromkeys(dlurls))  # entfernt doppelte URLs, behält Reihenfolge
+
 
         # Erstelle Tasks
         tasks = [asyncio.create_task(safe_download(file, dest_folder)) for file in dlurls]
