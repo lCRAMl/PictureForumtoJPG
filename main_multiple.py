@@ -23,8 +23,6 @@ IMG_DL_PATH = "Z:\\Downloads\\"  # Replace with your desired download path
 IMAGENAME = "ps"  # Replace with the image name
 nbrOfParallelDL = 5  # Number of parallel downloads
 
-download_counter = 0
-
 host_functions = {
         "imagebam.com": get_real_imagebam_url,
         "pixhost.to": get_real_pixhost_url,
@@ -230,10 +228,8 @@ def find_real_image_urls(image_urls: List[str]) -> List[str]:
     return filelist
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
-async def download(imagepath: str, destination: str):
-    global download_counter
-    download_counter += 1
-    fulldestinationname = os.path.join(destination, f"{IMAGENAME}_{download_counter:03}.jpg")
+async def download(imagepath: str, destination: str, index: int):
+    fulldestinationname = os.path.join(destination, f"{IMAGENAME}_{index:03}.jpg")
 
     if not os.path.exists(fulldestinationname) or (os.path.exists(fulldestinationname) and not verify_image(fulldestinationname)):
         async with httpx.AsyncClient(timeout=60) as client:
@@ -246,7 +242,7 @@ async def download(imagepath: str, destination: str):
                                 total = int(r.headers.get('content-length', 0))
                                 tqdm_params = {
                                     #'desc': imagepath,
-                                    'desc': f"{IMAGENAME}_{download_counter:03}.jpg",
+                                    'desc': f"{IMAGENAME}_{index:03}.jpg",
                                     'total': total,
                                     'miniters': 1,
                                     'unit': 'B',
@@ -281,9 +277,9 @@ def verify_image(img_file):
 
 sem = asyncio.Semaphore(nbrOfParallelDL)
 
-async def safe_download(file, dest):
+async def safe_download(file, dest, index):
     async with sem:
-        return await download(file, dest)
+        return await download(file, dest, index)
 
 async def main():
     tasks = []  # <<< immer initialisieren
@@ -300,8 +296,10 @@ async def main():
         dlurls = list(dict.fromkeys(dlurls))  # entfernt doppelte URLs, behält Reihenfolge
 
 
-        # Erstelle Tasks
-        tasks = [asyncio.create_task(safe_download(file, dest_folder)) for file in dlurls]
+        # Tasks mit festem Index anlegen
+        tasks = [
+            asyncio.create_task(safe_download(file, dest_folder, idx+1)) for idx, file in enumerate(dlurls)
+        ]
 
         # Starte Tasks und sammle Ergebnisse
         await asyncio.gather(*tasks, return_exceptions=True)
