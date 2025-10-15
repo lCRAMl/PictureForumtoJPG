@@ -16,11 +16,11 @@ from providers.providers import get_real_imagebam_url, get_real_pixhost_url, get
 from typing import List
 import keyboard
 
-FORUM_URL = "https://picturepub.net/threads/marion-cotillard-the-morning-show-season-4-premiere-in-new-york-september-9-2025.424027/"  # Replace with the forum thread URL
+FORUM_URL = "https://picturepub.net/threads/ana-de-armas-aol-build-presents-ana-de-armas-discussing-her-new-movies-hands-of-stone-and-war-dogs-in-new-york-city-august-22nd-2016.118385/"  # Replace with the forum thread URL
 from credentials import USERNAME, PASSWORD
 BASE_URL = "/".join(FORUM_URL.split("/")[:3])
 IMG_DL_PATH = "Z:\\Downloads\\"  # Replace with your desired download path
-IMAGENAME = "TheMorningShowSeason4PremiereinNYC_09Sep2o25"  # Replace with the image name
+IMAGENAME = "AOLBuildinNYC_22Aug2o16"  # Replace with the image name
 nbrOfParallelDL = 5  # Number of parallel downloads
 
 host_functions = {
