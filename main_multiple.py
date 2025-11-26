@@ -1,6 +1,6 @@
 
-# 2025-08-25 v0.2 added complete rewritten function for imagbam with CSRF handling and cookie setting
-# 2025-08-25 v0.2 removed all functions to providers.py
+# -*- coding: utf-8 -*-
+# main_multiple.py
 
 import requests
 from bs4 import BeautifulSoup
@@ -15,6 +15,10 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 from providers.providers import get_real_imagebam_url, get_real_pixhost_url, get_real_postimg_url, get_real_imgbox_url, get_real_turboimagehost_url
 from typing import List
 import keyboard
+import tkinter as tk
+from tkinter import messagebox
+from tkinter import font
+import sv_ttk
 
 FORUM_URL = "https://picturepub.net/threads/ana-de-armas-aol-build-presents-ana-de-armas-discussing-her-new-movies-hands-of-stone-and-war-dogs-in-new-york-city-august-22nd-2016.118385/"  # Replace with the forum thread URL
 from credentials import USERNAME, PASSWORD
@@ -318,5 +322,61 @@ async def main():
         print("All tasks cancelled. Exiting.")
 
 
+def start_gui():
+    """Startet ein einfaches Eingabefenster für FORUM_URL und IMAGENAME."""
+    def on_start():
+        global FORUM_URL, IMAGENAME
+        forum_url = entry_url.get().strip()
+        image_name = entry_name.get().strip()
+
+        if not forum_url or not image_name:
+            messagebox.showerror("Fehler", "Bitte URL und Bildname eingeben.")
+            return
+
+        # Setze globale Variablen
+        globals()["FORUM_URL"] = forum_url
+        globals()["IMAGENAME"] = image_name
+
+        root.destroy()  # GUI-Fenster schließen
+        asyncio.run(main())  # Script starten
+
+    def on_cancel():
+        root.destroy()
+
+    root = tk.Tk()
+    root.title("Forum Image Downloader")
+    root.eval('tk::PlaceWindow . center')
+    sv_ttk.set_theme("dark")
+    large_font = font.Font(family="Arial", size=14)
+
+    tk.Label(root, text="Forum URL:").grid(row=0, column=0, sticky="w", padx=10, pady=5)
+    entry_url = tk.Entry(root, width=200, font=large_font)
+    entry_url.grid(row=0, column=1, padx=10, pady=5)
+    entry_url.insert(0, FORUM_URL)  # default vorbefüllen
+
+    tk.Label(root, text="Bildname:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
+    entry_name = tk.Entry(root, width=100, font=large_font)
+    entry_name.grid(row=1, column=1, padx=10, pady=5)
+    entry_name.insert(0, IMAGENAME)  # default vorbefüllen
+
+    frame_btns = tk.Frame(root)
+    frame_btns.grid(row=2, column=0, columnspan=2, pady=10)
+    tk.Button(frame_btns, text="Start", command=on_start, width=15, bg="#4CAF50", fg="white").pack(side="left", padx=10)
+    tk.Button(frame_btns, text="Abbrechen", command=on_cancel, width=15, bg="#f44336", fg="white").pack(side="left", padx=10)
+
+    # --- Fenster zentrieren ---
+    root.update_idletasks()
+    width = root.winfo_width()
+    height = root.winfo_height() 
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    x = (screen_width // 2) - (width // 2)
+    y = (screen_height // 2) - (height // 2)
+    root.geometry(f"{width}x{height}+{x}+{y}")
+
+    root.mainloop()
+
+
+# --- Hauptstartpunkt ---
 if __name__ == '__main__':
-    asyncio.run(main())
+    start_gui()
