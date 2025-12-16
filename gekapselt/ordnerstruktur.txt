@@ -1,0 +1,19 @@
+project/
+│
+├─ main.py                  -> Startpunkt (GUI + Aufruf der Logic)
+├─ config.py                -> Globale Einstellungen
+├─ downloader/
+│   ├─ __init__.py
+│   └─ image_downloader.py  -> Kapselung der Download-Logik
+│
+├─ providers/
+│   ├─ __init__.py
+│   └─ providers.py         -> Deine resolver-Funktionen (unverändert)
+│
+├─ gui/
+│   ├─ __init__.py
+│   └─ gui.py               -> Tk-GUI sauber ausgelagert
+│
+└─ utils/
+    ├─ __init__.py
+    └─ file_utils.py        -> Ordner-Erstellung, Titel-Extraktion etc.

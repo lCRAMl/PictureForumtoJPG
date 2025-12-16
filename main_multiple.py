@@ -19,9 +19,12 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import font
 import sv_ttk
+from urllib.parse import urljoin
 
-FORUM_URL = "https://picturepub.net/threads/ana-de-armas-aol-build-presents-ana-de-armas-discussing-her-new-movies-hands-of-stone-and-war-dogs-in-new-york-city-august-22nd-2016.118385/"  # Replace with the forum thread URL
+FORUM_URL = "https://picturepub.net/threads/anna-kendrick-ee-bafta-film-awards-2025-in-london-feb-16th-2025.410020/"  # Replace with the forum thread URL
 from credentials import USERNAME, PASSWORD
+USE_LOGIN = True  # <--- Login ein-/ausschaltbar
+
 BASE_URL = "/".join(FORUM_URL.split("/")[:3])
 IMG_DL_PATH = "Z:\\Downloads\\"  # Replace with your desired download path
 IMAGENAME = "AOLBuildinNYC_22Aug2o16"  # Replace with the image name
@@ -66,6 +69,20 @@ class AbortProgram(Exception):
 def check_abort():
     if keyboard.is_pressed("esc"):
         raise AbortProgram()
+
+def is_valid_href(href: str) -> bool:
+    """
+    Prüft, ob ein href grundsätzlich sinnvoll für urljoin ist.
+    """
+    if not href:
+        return False
+
+    href = href.strip().lower()
+
+    if href.startswith(('[', '#', 'javascript:', 'mailto:', ':')):
+        return False
+
+    return True
 
 def login(base_url, username, password):
     """
@@ -127,16 +144,10 @@ def find_posted_pictures(session, forum_url):
     """
     Finds all posted pictures in a forum link within a specific container,
     filtering by allowed hosts.
-
-    Args:
-        session (requests.Session): The logged-in session.
-        forum_url (str): The URL of the forum thread or page.
-
-    Returns:
-        list: A list of direct image links found in the forum page that match the allowed hosts.
     """
 
     print("Searching Pictures in:", forum_url)
+
     response = session.get(forum_url)
     if response.status_code != 200:
         print("Failed to load forum page.")
@@ -145,25 +156,43 @@ def find_posted_pictures(session, forum_url):
     soup = BeautifulSoup(response.text, 'html.parser')
     image_links = []
 
-    # Search only within the specific container
     container = soup.find('div', class_='block-body js-replyNewMessageContainer')
     if not container:
         print("Specified container not found.")
         return []
 
-    # Find all <a> tags that contain href attributes within the container
     links = container.find_all('a', href=True)
+
+    skipped = 0
+    invalid = 0
+
     for link in links:
-        href = link['href']
-        # Resolve relative URLs to absolute URLs
-        image_url = requests.compat.urljoin(forum_url, href)
-        #print("Found link:", image_url)  # Debugging: Print each found link
-        # Check if image_url contains part of any link from host_functions.keys() <- optional
-        if any(host in image_url for host in host_functions) and "gallery" not in image_url:
+        href = link.get('href', '').strip()
+
+        # 1) Href grob validieren
+        if not is_valid_href(href):
+            skipped += 1
+            continue
+
+        # 2) urljoin sicher ausführen
+        try:
+            image_url = urljoin(forum_url, href)
+        except ValueError:
+            invalid += 1
+            continue
+
+        # 3) Host-Whitelist + Filter
+        if (
+            any(host in image_url for host in host_functions)
+            and "gallery" not in image_url
+        ):
             image_links.append(image_url)
 
-    print(f"Found {len(image_links)} image links within the specified container that match the allowed hosts.")
-    #print(image_links)  # Debugging: Print the list of found image links
+    print(
+        f"Found {len(image_links)} valid image links "
+        f"(skipped: {skipped}, invalid: {invalid})"
+    )
+
     return image_links
 
 def create_folder_from_forum_title(session, forum_url, save_path):
@@ -350,12 +379,12 @@ def start_gui():
     large_font = font.Font(family="Arial", size=14)
 
     tk.Label(root, text="Forum URL:").grid(row=0, column=0, sticky="w", padx=10, pady=5)
-    entry_url = tk.Entry(root, width=200, font=large_font)
+    entry_url = tk.Entry(root, width=150, font=large_font)
     entry_url.grid(row=0, column=1, padx=10, pady=5)
     entry_url.insert(0, FORUM_URL)  # default vorbefüllen
 
     tk.Label(root, text="Bildname:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
-    entry_name = tk.Entry(root, width=100, font=large_font)
+    entry_name = tk.Entry(root, width=150, font=large_font)
     entry_name.grid(row=1, column=1, padx=10, pady=5)
     entry_name.insert(0, IMAGENAME)  # default vorbefüllen
 
