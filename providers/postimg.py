@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 from typing import Optional
 
-def get_real_postimg_url(image_page_url: str, debug: bool = False) -> Optional[str]:
+def get_real_postimg_url(image_page_url: str, debug: bool = False, proxies: Optional[dict] = None) -> Optional[str]:
     """
     Extrahiert die echte Bild-URL von einer Postimages-Seite.
     Funktioniert, egal ob der Download-Button vorhanden ist oder nicht.
@@ -22,7 +22,7 @@ def get_real_postimg_url(image_page_url: str, debug: bool = False) -> Optional[s
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
             "Referer": "https://postimg.cc/"
         }
-        response = requests.get(image_page_url, headers=headers)
+        response = requests.get(image_page_url, headers=headers, proxies=proxies)
         if response.status_code != 200:
             if debug:
                 print(f"Failed to load page: {image_page_url} (status {response.status_code})")

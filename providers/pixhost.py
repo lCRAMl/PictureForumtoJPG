@@ -5,11 +5,11 @@ import requests
 from bs4 import BeautifulSoup
 from typing import Optional
 
-def get_real_pixhost_url(image_url, debug: bool = False) -> Optional[str]:
+def get_real_pixhost_url(image_url, debug: bool = False, proxies: Optional[dict] = None) -> Optional[str]:
 
     try:
         # Fetch the page to get the actual image URL
-        response = requests.get(image_url)
+        response = requests.get(image_url, proxies=proxies)
         if response.status_code != 200:
             print(f"Failed to load Pixhost page: {image_url}")
             return []

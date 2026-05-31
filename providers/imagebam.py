@@ -2,8 +2,10 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import re
+from typing import Optional
 
-def get_real_imagebam_url(url: str, timeout: int = 10, debug: bool = False):
+
+def get_real_imagebam_url(url: str, timeout: int = 10, debug: bool = False, proxies: Optional[dict] = None):
     session = requests.Session()
     session.headers.update({
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -11,7 +13,9 @@ def get_real_imagebam_url(url: str, timeout: int = 10, debug: bool = False):
                       "Chrome/120.0.0.0 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.9"
     })
-    # Cookie setzen wie beim Klick auf „Continue to your image“
+    if proxies:
+        session.proxies.update(proxies)
+    # Cookie setzen wie beim Klick auf "Continue to your image"
     session.cookies.set("sfw_inter", "1", domain=".imagebam.com", path="/")
 
     try:
@@ -28,7 +32,7 @@ def get_real_imagebam_url(url: str, timeout: int = 10, debug: bool = False):
         else:
             next_url = url  # Fallback: gleiche Seite
 
-        # Jetzt die „echte“ Bildseite laden
+        # Jetzt die echte Bildseite laden
         r2 = session.get(next_url, timeout=timeout, headers={"Referer": url})
         r2.raise_for_status()
 
@@ -43,7 +47,7 @@ def get_real_imagebam_url(url: str, timeout: int = 10, debug: bool = False):
         if img and img.get("src"):
             return img["src"]
 
-        # 2. Alternativ direkte Links prüfen
+        # 2. Alternativ direkte Links pruefen
         for a in soup2.find_all("a", href=True):
             href = a["href"]
             if re.search(r'images\d+\.imagebam\.com/.*\.(jpe?g|png|gif|webp)$', href, re.I):
@@ -56,7 +60,7 @@ def get_real_imagebam_url(url: str, timeout: int = 10, debug: bool = False):
                 return src
 
     except Exception as e:
-        print(f"[get_imagebam_image_url] Fehler für {url}: {e}")
+        print(f"[get_imagebam_image_url] Fehler fuer {url}: {e}")
 
     return None
 

@@ -6,8 +6,8 @@ from bs4 import BeautifulSoup
 from typing import Optional
 
 
-def get_real_imgbox_url(image_url, debug: bool = False) -> Optional[str]:
-    
+def get_real_imgbox_url(image_url, debug: bool = False, proxies: Optional[dict] = None) -> Optional[str]:
+
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -16,7 +16,7 @@ def get_real_imgbox_url(image_url, debug: bool = False) -> Optional[str]:
             "Referer": "https://imgbox.com/"
         }
 
-        response = requests.get(image_url, headers=headers)
+        response = requests.get(image_url, headers=headers, proxies=proxies)
         if response.status_code != 200:
             print(f"Status code: {response.status_code}")
             return None
