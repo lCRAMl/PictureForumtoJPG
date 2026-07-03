@@ -27,7 +27,7 @@ from skimage import io as skio
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from PyQt6.QtWidgets import (
-    QApplication, QDialog, QMainWindow, QWidget,
+    QApplication, QMainWindow, QWidget,
     QVBoxLayout, QHBoxLayout, QGridLayout,
     QTabWidget, QLabel, QLineEdit, QPushButton,
     QCheckBox, QProgressBar, QPlainTextEdit,
@@ -44,13 +44,13 @@ from providers.providers import (
     get_real_turboimagehost_url,
 )
 
-from splash import SplashScreen
+from SplashScreenPython.splash_video_webP import SplashScreen
 
 # ----------------------------------------------------------------------
 # Konfiguration
 # ----------------------------------------------------------------------
 
-BUILD_INFO = "Forum Image Downloader\nVersion 1.0.0\n© June 2026"
+BUILD_INFO = "Forum Image Downloader \nVersion 1.0.1 \nJune 2026"
 DEFAULT_FORUM_URL = "https://picturepub.net/"
 DEFAULT_IMAGENAME = "AOLBuildinNYC_22Aug2o16"
 DEFAULT_PROXY_URL = "socks5h://127.0.0.1:9150"
@@ -67,6 +67,7 @@ except ImportError:
 HOST_FUNCTIONS = {
     "imagebam.com": get_real_imagebam_url,
     "pixhost.to": get_real_pixhost_url,
+    "pixhost.cc": get_real_pixhost_url,
     "postimg.cc": get_real_postimg_url,
     "imgbox.com": get_real_imgbox_url,
     "turboimagehost.com": get_real_turboimagehost_url,
@@ -539,7 +540,7 @@ class DownloaderApp(QMainWindow):
     # ---------- UI-Aufbau ----------
 
     def _build_ui(self) -> None:
-        self.setWindowTitle("Forum Image Downloader")
+        self.setWindowTitle(BUILD_INFO)
         self.resize(900, 760)
         self.setMinimumSize(720, 580)
 
