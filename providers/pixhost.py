@@ -7,6 +7,9 @@ from typing import Optional
 
 def get_real_pixhost_url(image_url, debug: bool = False, proxies: Optional[dict] = None) -> Optional[str]:
 
+    if "pixhost.to" in image_url:
+        image_url = image_url.replace("pixhost.to", "pixhost.cc")
+
     try:
         # Fetch the page to get the actual image URL
         response = requests.get(image_url, proxies=proxies)
@@ -30,7 +33,7 @@ if __name__ == "__main__":
     import sys
 
     # URL aus Kommandozeile oder Hardcode
-    test_url = sys.argv[1] if len(sys.argv) > 1 else "https://pixhost.to/show/7875/630863093_img_6513.jpg"
+    test_url = sys.argv[1] if len(sys.argv) > 1 else "https://pixhost.to/show/9333/749059648_anya-1.jpg"
     result = get_real_pixhost_url(test_url, debug=True)
     if result:
         print("Bild-URL:", result)
