@@ -50,7 +50,8 @@ from SplashScreenPython.splash_video_webP import SplashScreen
 # Konfiguration
 # ----------------------------------------------------------------------
 
-BUILD_INFO = "Forum Image Downloader \nVersion 1.0.1 \nJune 2026"
+from build_version import BUILD_INFO, VERSION, BUILD_TIME, APP_NAME
+
 DEFAULT_FORUM_URL = "https://picturepub.net/"
 DEFAULT_IMAGENAME = "AOLBuildinNYC_22Aug2o16"
 DEFAULT_PROXY_URL = "socks5h://127.0.0.1:9150"
