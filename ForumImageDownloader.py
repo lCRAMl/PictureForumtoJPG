@@ -42,6 +42,7 @@ from providers.providers import (
     get_real_pixhost_url,
     get_real_postimg_url,
     get_real_turboimagehost_url,
+    get_real_imx_url,
 )
 
 from SplashScreenPython.splash_video_webP import SplashScreen
@@ -72,6 +73,7 @@ HOST_FUNCTIONS = {
     "postimg.cc": get_real_postimg_url,
     "imgbox.com": get_real_imgbox_url,
     "turboimagehost.com": get_real_turboimagehost_url,
+    "imx.to": get_real_imx_url,
 }
 
 USER_AGENTS = [
