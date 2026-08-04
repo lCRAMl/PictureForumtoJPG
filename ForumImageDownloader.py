@@ -70,6 +70,7 @@ HOST_FUNCTIONS = {
     "imagebam.com": get_real_imagebam_url,
     "pixhost.to": get_real_pixhost_url,
     "pixhost.cc": get_real_pixhost_url,
+    "pixho.st": get_real_pixhost_url,
     "postimg.cc": get_real_postimg_url,
     "imgbox.com": get_real_imgbox_url,
     "turboimagehost.com": get_real_turboimagehost_url,
