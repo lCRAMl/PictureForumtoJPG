@@ -104,6 +104,29 @@ def build_headers() -> dict:
     }
 
 
+def build_image_headers(url: str) -> dict:
+    """
+    Header für den eigentlichen Datei-Download.
+
+    Anders als build_headers() muss der Request als Bild-Abruf und nicht als
+    Seitenaufruf aussehen: Mit "Sec-Fetch-Dest: document" / "Sec-Fetch-Mode:
+    navigate" liefern Hoster wie Pixhost statt der JPEG-Datei die HTML-
+    Ansichtsseite aus, die dann als unlesbares ".jpg" auf der Platte landet.
+    """
+    parts = urlsplit(url)
+    return {
+        "User-Agent": random.choice(USER_AGENTS),
+        "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Referer": f"{parts.scheme}://{parts.netloc}/",
+        "Connection": "keep-alive",
+        "Cache-Control": "no-cache",
+        "Sec-Fetch-Dest": "image",
+        "Sec-Fetch-Mode": "no-cors",
+        "Sec-Fetch-Site": "cross-site",
+    }
+
+
 # ----------------------------------------------------------------------
 # Helfer
 # ----------------------------------------------------------------------
@@ -362,15 +385,23 @@ class DownloadJob:
         self.image_name = sanitize_filename(image_name)
 
 
-@retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(2), reraise=True)
 async def _download_stream(
     client: httpx.AsyncClient,
     url: str,
     target_path: str,
     on_progress: Callable[[int, int], None],
 ) -> None:
-    async with client.stream("GET", url, headers=build_headers()) as r:
+    async with client.stream("GET", url, headers=build_image_headers(url)) as r:
         r.raise_for_status()
+
+        # Hoster mit Hotlink-Schutz antworten mit 200 und einer HTML-Seite
+        # statt mit der Datei. Ohne diese Prüfung würde die Seite als
+        # unlesbares Bild gespeichert und als "ok" gemeldet.
+        content_type = r.headers.get("content-type", "").split(";")[0].strip().lower()
+        if content_type.startswith("text/") or content_type == "application/xhtml+xml":
+            raise ValueError(f"Kein Bild geliefert (Content-Type: {content_type})")
+
         total = int(r.headers.get("content-length", 0))
         downloaded = 0
         on_progress(0, total)

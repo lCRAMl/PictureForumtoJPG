@@ -30,7 +30,7 @@ if __name__ == "__main__":
     import sys
 
     # URL aus Kommandozeile oder Hardcode
-    test_url = sys.argv[1] if len(sys.argv) > 1 else "https://pixhost.to/show/9333/749059648_anya-1.jpg"
+    test_url = sys.argv[1] if len(sys.argv) > 1 else "https://pixhost.to/show/5433/765781246_kaya-53.jpg"
     result = get_real_pixhost_url(test_url, debug=True)
     if result:
         print("Bild-URL:", result)
