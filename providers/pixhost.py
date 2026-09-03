@@ -7,9 +7,6 @@ from typing import Optional
 
 def get_real_pixhost_url(image_url, debug: bool = False, proxies: Optional[dict] = None) -> Optional[str]:
 
-    if "pixhost.to" in image_url:
-        image_url = image_url.replace("pixhost.to", "pixhost.cc")
-
     try:
         # Fetch the page to get the actual image URL
         response = requests.get(image_url, proxies=proxies)
