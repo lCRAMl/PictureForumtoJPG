@@ -16,6 +16,7 @@ import random
 import re
 import sys
 import threading
+import unicodedata
 from pathlib import Path
 from typing import Callable, List, Optional
 from urllib.parse import urljoin, urlsplit, urlunsplit
@@ -157,6 +158,26 @@ def verify_image(img_file: str) -> bool:
 
 def sanitize_filename(name: str) -> str:
     return re.sub(r'[<>:"/\\|?*]', "_", name).strip() or "download"
+
+
+UMLAUT_MAP = str.maketrans({
+    "ä": "ae", "ö": "oe", "ü": "ue",
+    "Ä": "Ae", "Ö": "Oe", "Ü": "Ue",
+    "ß": "ss", "ẞ": "SS",
+})
+
+
+def normalize_image_name(name: str) -> str:
+    """
+    Reduziert einen Bildnamen auf A-Z, a-z, 0-9 und Unterstrich.
+
+    Deutsche Umlaute werden vorher ausgeschrieben (ae/oe/ue/ss), sonstige
+    Akzentbuchstaben auf ihren Grundbuchstaben zurueckgefuehrt (é -> e).
+    Alles Uebrige - Leerzeichen, Komma, Punkt, Sonderzeichen - entfaellt.
+    """
+    name = name.translate(UMLAUT_MAP)
+    name = unicodedata.normalize("NFKD", name)
+    return re.sub(r"[^A-Za-z0-9_]", "", name)
 
 
 # ----------------------------------------------------------------------
@@ -617,7 +638,7 @@ class DownloaderApp(QMainWindow):
         g.addWidget(QLabel("Bildname:"), 1, 0, Qt.AlignmentFlag.AlignLeft)
         self.entry_name = QLineEdit(DEFAULT_IMAGENAME)
         self.entry_name.setFont(QFont("Segoe UI", 12))
-        self.entry_name.textChanged.connect(self._strip_whitespace_image_name)
+        self.entry_name.textChanged.connect(self._sanitize_image_name)
         g.addWidget(self.entry_name, 1, 1)
 
         self.chk_login = QCheckBox("Login verwenden")
@@ -722,12 +743,28 @@ class DownloaderApp(QMainWindow):
 
     # ---------- Eingabe-Filter ----------
 
-    def _strip_whitespace_image_name(self, text: str) -> None:
-        cleaned = re.sub(r"\s+", "", text)
-        if cleaned != text:
-            self.entry_name.blockSignals(True)
-            self.entry_name.setText(cleaned)
-            self.entry_name.blockSignals(False)
+    def _sanitize_image_name(self, text: str) -> None:
+        """
+        Erlaubt im Bildnamen nur A-Z, a-z, 0-9 und Unterstrich.
+
+        Umlaute werden zu ae/oe/ue/ss ausgeschrieben, alles andere
+        (Leerzeichen, Komma, Punkt, sonstige Sonderzeichen) wird direkt
+        bei der Eingabe entfernt.
+        """
+        cleaned = normalize_image_name(text)
+        if cleaned == text:
+            return
+
+        # Cursor an der gleichen Stelle im Text halten: der Text vor dem
+        # Cursor wird gleich behandelt, seine neue Laenge ist die neue
+        # Position (ein ausgeschriebenes "ue" rueckt den Cursor also mit).
+        pos = self.entry_name.cursorPosition()
+        new_pos = len(normalize_image_name(text[:pos]))
+
+        self.entry_name.blockSignals(True)
+        self.entry_name.setText(cleaned)
+        self.entry_name.setCursorPosition(new_pos)
+        self.entry_name.blockSignals(False)
 
     # ---------- Proxy ----------
 
