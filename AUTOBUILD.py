@@ -2,6 +2,7 @@
 
 from ensurepip import version
 import subprocess
+import tempfile
 from datetime import datetime
 import os
 import shutil
@@ -113,6 +114,51 @@ def clean():
             os.remove(file)
             print(f"🧹 removed {file}")
 
+PIN_OK = "📌 Kachel vorhanden - sie startet jetzt den neuen Bau"
+PIN_HINT = ('📌 Noch keine Kachel. Einmal anheften: Start > Alle Apps > {name} > Rechtsklick > '
+            '"An Start anheften". Alte Kacheln mit Versionsnummer im Namen loesen.')
+
+
+def start_menu_programs_dir() -> str:
+    """Startmenue-Ordner "Programme" des Benutzers, auch bei umgeleiteten Profilen.
+    Aus ihm speist Windows die Liste "Alle Apps" - und die Kacheln."""
+    try:
+        import ctypes
+        buf = ctypes.create_unicode_buffer(260)
+        # 0x0002 = CSIDL_PROGRAMS, 0 = SHGFP_TYPE_CURRENT
+        if ctypes.windll.shell32.SHGetFolderPathW(0, 0x0002, 0, 0, buf) == 0 and buf.value:
+            return buf.value
+    except Exception:
+        pass
+    return os.path.join(os.environ.get("APPDATA", ""), "Microsoft", "Windows", "Start Menu", "Programs")
+
+
+def start_tile_present(shortcut) -> bool:
+    """Steht im Startmenue eine Kachel fuer diese Verknuepfung? Gelesen mit Export-StartLayout."""
+    with tempfile.TemporaryDirectory() as tmp:
+        layout = os.path.join(tmp, "layout.xml")
+        subprocess.run(["powershell", "-NoProfile", "-Command", f"Export-StartLayout -Path '{layout}'"],
+                       capture_output=True, timeout=60)
+        if not os.path.exists(layout):
+            return False
+        with open(layout, encoding="utf-8", errors="ignore") as fh:
+            text = fh.read().lower()
+    return "\\" + os.path.basename(str(shortcut)).lower() in text
+
+
+def check_start_tile(shortcut) -> None:
+    """Meldet, ob die Kachel steht. Anheften kann das Skript sie nicht: Windows 10 laesst
+    "An Start anheften" nur den Explorer ausfuehren, jedes andere Programm bekommt
+    "Zugriff verweigert". Weil der Name der Verknuepfung keine Version traegt, folgt eine
+    einmal angeheftete Kachel jedem weiteren Bau und startet immer die neueste Fassung.
+    """
+    name = os.path.splitext(os.path.basename(str(shortcut)))[0]
+    if start_tile_present(shortcut):
+        print(PIN_OK)
+    else:
+        print(PIN_HINT.format(name=name))
+
+
 def create_shortcut(app_name, target_exe, output_dir):
     try:
         import pythoncom
@@ -125,7 +171,9 @@ def create_shortcut(app_name, target_exe, output_dir):
         if not os.path.exists(target_exe):
             raise FileNotFoundError(target_exe)
 
-        shortcut_path = os.path.realpath(os.path.join(output_dir, f"{app_name}.lnk"))
+        # Im Startmenue und ohne Version im Namen: eine dort angeheftete Kachel
+        # startet nach jedem Bau die neueste .exe.
+        shortcut_path = os.path.join(start_menu_programs_dir(), f"{app_name}.lnk")
 
         shell_link = pythoncom.CoCreateInstance(
             shell.CLSID_ShellLink,
@@ -147,6 +195,8 @@ def create_shortcut(app_name, target_exe, output_dir):
 
         persist_file = shell_link.QueryInterface(pythoncom.IID_IPersistFile)
         persist_file.Save(shortcut_path, 0)
+        print(f"🔗 Startmenue-Verknuepfung zeigt auf den neuen Bau: {shortcut_path}")
+        check_start_tile(shortcut_path)
 
         print(f"🔗 Shortcut created: {shortcut_path}")
 
