@@ -248,6 +248,9 @@ def build_pyinstaller(exe_name):
 # =========================
 
 def main():
+    # Alle Pfade oben, git und PyInstaller arbeiten relativ zum Projektordner. Der Bau darf
+    # deshalb nicht davon abhaengen, aus welchem Ordner er gestartet wird.
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     print("🔧 Build started...")
 
     version = get_git_version()
